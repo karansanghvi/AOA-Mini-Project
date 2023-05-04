@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>dijkastra's algorithm</title>
+	<style>
+		canvas {
+			border: 1px solid black;
+		}
+	</style>
+</head>
+<body>
+  <h1 align="center">Dijkastra's Algorithm</h1>
+	<canvas id="myCanvas" width="1500" height="500"></canvas><br><br>
+
+  <button value = "Add Node" onclick="addMode()">Add Mode</button><br><br>
+  <button value = "Select Mode" onclick="selectMode()">Default Mode</button><br><br>
+
+  <input type="number" placeholder="Point 1" id="pt1">
+  <input type="number" placeholder="Point 2" id="pt2">
+  <input type="number" placeholder="Cost" id="cost">
+  <span id="Error"></span>
+
+  <button value = "Add Link" onclick="addLine()">Add Link</button><br><br>
+  <input type="number" placeholder="Start Node" id="start">
+  <input type="number" placeholder="End Node" id="end">
+
+  <button value = "Get Path" onclick="runDijkastra()">Calculate Shortest Path</button><br><br>
+
+  <span id="path"></span><br>
+  <span id="dist"></span>
+
+	<script>
+
+    //======================INITIALIZATION==================
+		// Get the canvas element
+		var canvas = document.getElementById("myCanvas");
+		// Set up the canvas context
+		var ctx = canvas.getContext("2d");
+    var circleId = -1;
+    var mode = 0;
+
+    var circleCoords=[];
+    var circleNum = 0;
+
+    var costs = [];
+    
+    function dijkstrasAlgorithm(numNodes, links, start, end) {
+      // Initialize the distance array
+      const distances = new Array(numNodes).fill(Infinity);
+      distances[start] = 0;
+    
+      // Initialize the visited array
+      const visited = new Array(numNodes).fill(false);
+    
+      // Initialize the previous array
+      const previous = new Array(numNodes).fill(null);
+    
+      // Loop until all nodes have been visited
+      while (!visited[end]) {
+        // Find the node with the smallest distance that hasn't been visited yet
+        let minDistance = Infinity;
+        let currentNode = null;
+        for (let i = 0; i < numNodes; i++) {
+          if (!visited[i] && distances[i] < minDistance) {
+            minDistance = distances[i];
+            currentNode = i;
+          }
+        }
+    
+        // Mark the current node as visited
+        visited[currentNode] = true;
+    
+        // Update the distances to neighboring nodes
+        for (const [node1, node2, cost] of links) {
+          if (node1 === currentNode) {
+            const neighbor = node2;
+            const distance = distances[currentNode] + cost;
+            if (distance < distances[neighbor]) {
+              distances[neighbor] = distance;
+              previous[neighbor] = currentNode;
+            }
+          }
+          if (node2 === currentNode) {
+            const neighbor = node1;
+            const distance = distances[currentNode] + cost;
+            if (distance < distances[neighbor]) {
+              distances[neighbor] = distance;
+              previous[neighbor] = currentNode;
+            }
+          }
+        }
+      }
+    
+      // Build the path from the end node to the start node
+      let path = [];
+      let currentNode = end;
+      while (currentNode !== start) {
+        path.unshift(currentNode);
+        currentNode = previous[currentNode];
+      }
+      path.unshift(start);
+    
+      document.getElementById("dist").innerHTML = "Distance: "+distances[end];
+      // Return the path as a string
+      return path.join(" -> ");
+    }
+    
+    
+
+    function addLine()
+    {
+      var pt1 = parseFloat(document.getElementById("pt1").value);
+      var pt2 = parseFloat(document.getElementById("pt2").value);
+      var cost = parseInt(document.getElementById("cost").value);
+
+      if(pt1!=null && pt2!=null && cost!=null && cost>0)
+      {
+
+        var flag=false;
+
+        for(var i=0;i<circleNum;i++)
+        {
+          if(circleCoords[i][0] == pt1)
+          {
+            var x1 = circleCoords[i][1];
+            var y1 = circleCoords[i][2];
+            var circle1 = i;
+            flag=true;
+            break;
+          }
+        }
+
+        if(flag)
+        {
+          flag=false
+          for(var i=0;i<circleNum;i++)
+          {
+            if(circleCoords[i][0] == pt2)
+            {
+              var x2 = circleCoords[i][1];
+              var y2 = circleCoords[i][2];
+              var circle2 = i;
+              flag=true;
+              break;
+            }
+          }
+
+          if(flag)
+          {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2); // Set the line color to red
+            ctx.stroke();
+
+            costs.push([circle1,circle2,cost])
+          }
+          else
+          {
+            document.getElementById("Error").innerHTML = "Invalid Points";
+          }
+        }
+        else
+        {
+          document.getElementById("Error").innerHTML = "Invalid Points";
+        }
+
+        
+      }
+      else
+      {
+        document.getElementById("Error").innerHTML = "Invalid Points";
+      }
+    }
+
+    //======================FUNCTIONS======================
+    function drawCircle()
+    {
+        // Get the click coordinates
+        var x = event.clientX - canvas.offsetLeft;
+        var y = event.clientY - canvas.offsetTop;
+
+        // Draw a circle at the click coordinates
+        ctx.beginPath();
+        ctx.arc(x, y, 20, 0, 2*Math.PI);
+        
+
+        // Assign an ID number to the circle
+        circleId++;
+        ctx.id = circleId;
+
+        // Display the ID number inside the circle
+        ctx.fillStyle = "black";
+        ctx.fillText(circleId, x, y);
+        circleCoords.push([circleId, x, y]);
+        circleNum++;
+        ctx.stroke();
+    }
+
+    
+    function addMode()
+    {
+      mode = 1;
+    }
+    function selectMode()
+    {
+      mode = 0;
+    }
+    function runDijkastra()
+    {
+      var start = parseInt(document.getElementById("start").value );
+      var end = parseInt(document.getElementById("end").value);
+
+      if(start!=null && end!=null && start>=0 && end>=0 )
+      {
+        var path = dijkstrasAlgorithm(circleNum,costs,start,end);
+        document.getElementById("path").innerHTML = "Shortest Path: "+path;
+      }
+      
+    }
+
+
+
+    //==========================EVENT LISTENER===============================
+		// Add a click event listener to the canvas
+		canvas.addEventListener("click", function(event) {
+			if(mode == 1)
+      {
+        drawCircle();
+      }
+      
+		});
+	</script>
+</body>
+</html>
